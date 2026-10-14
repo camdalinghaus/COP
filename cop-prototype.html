@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nanwakolas Marine COP — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS — lifted from the wireframes. Every colour in
+   this prototype comes from here. When the palette changes,
+   this block is the only place you edit.
+   ============================================================ */
+:root{
+  --paper:#FDFCF9;
+  --panel:#EFECE5;
+  --line:#5C6B73;
+  --line-soft:#D8D4CC;
+  --slate:#5C6B73;
+  --muted:#8B9499;
+  --ink:#333;
+  --green:#0F6E56;
+  --amber:#D97706;
+  --amber-pale:#FAEEDA;
+  --amber-deep:#854F0B;
+  --coral:#D85A30;
+  --tide:#1D9E75;
+  --copper:#9A5B2B;
+  --violet:#7F77DD;
+  --map-water:#EEF3F3;
+  --map-water-2:#E4ECEC;
+  --map-land:#F4F1E9;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:var(--mono);font-size:11px;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+
+/* ---------- app shell ---------- */
+#app{display:flex;height:100vh;min-width:1080px}
+
+/* ---------- nav rail ---------- */
+.rail{width:56px;flex:none;border-right:1px solid var(--ink);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:9px;background:var(--paper)}
+.crest{width:26px;height:26px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 9px var(--mono);margin-bottom:2px}
+.navitem{width:52px;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:3px;border-left:2px solid transparent;transition:background .12s}
+.navitem .glyph{width:16px;height:16px;border:1px solid var(--slate);display:flex;align-items:center;justify-content:center}
+.navitem .glyph svg{width:11px;height:11px;stroke:var(--slate);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.navitem .lbl{font:500 7px var(--mono);color:var(--slate);letter-spacing:.03em}
+.navitem:hover{background:#F3F1EB}
+.navitem.on{background:var(--amber-pale);border-left-color:var(--amber)}
+.navitem.on .glyph{border-color:var(--amber-deep);border-width:1.5px}
+.navitem.on .glyph svg{stroke:var(--amber-deep)}
+.navitem.on .lbl{color:var(--amber-deep);font-weight:600}
+.avatar{width:24px;height:24px;border:1px solid var(--slate);border-radius:50%;display:flex;align-items:center;justify-content:center;font:500 8px var(--mono);color:var(--slate)}
+
+/* ---------- main column ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.header{height:56px;flex:none;border-bottom:1px solid var(--ink);display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--paper)}
+.wordmark{display:flex;align-items:center;gap:8px;flex:none}
+.wordmark .ring{width:22px;height:22px;border:1px solid var(--green);border-radius:50%}
+.wordmark .txt{font:700 15px var(--display);color:var(--green);white-space:nowrap}
+
+.switcher{position:relative;flex:none}
+.switcher-btn{width:310px;height:30px;border:1px solid var(--slate);border-radius:4px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font:400 11px var(--mono);color:var(--slate);text-align:left}
+.switcher-btn:hover{border-color:var(--ink)}
+.switcher-btn.live{border-color:var(--amber);border-width:1.5px;background:var(--amber-pale);color:var(--amber-deep);font-weight:500}
+.menu{position:absolute;top:34px;left:0;width:310px;background:#fff;border:1px solid var(--slate);border-radius:4px;z-index:60;box-shadow:0 6px 18px rgba(0,0,0,.10);overflow:hidden}
+.menu-item{display:block;width:100%;text-align:left;padding:8px 10px;font:400 11px var(--mono);color:var(--slate);border-bottom:1px solid var(--line-soft)}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:var(--panel)}
+.menu-item .m1{color:var(--ink);font-weight:500}
+.menu-item .m2{color:var(--muted);font-size:10px;margin-top:2px}
+
+.search{flex:1;max-width:300px;height:30px;border:1px dashed var(--slate);border-radius:4px;display:flex;align-items:center;padding:0 10px;font:400 11px var(--mono);color:var(--muted)}
+.clock{margin-left:auto;font:400 11px var(--mono);color:var(--slate);flex:none}
+
+/* ---------- generic page furniture ---------- */
+.body{flex:1;display:flex;min-height:0}
+.pagebar{height:44px;flex:none;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--paper)}
+.pagetitle{font:600 13px var(--display);color:var(--ink)}
+.chip{border:1px solid var(--slate);border-radius:3px;padding:3px 8px;font:400 10px var(--mono);color:var(--slate)}
+.chip:hover{border-color:var(--ink)}
+.chip.on{background:var(--panel);border-color:var(--ink);color:var(--ink)}
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat .k{font:500 8px var(--mono);color:var(--muted);letter-spacing:.06em}
+.stat .v{font:600 13px var(--mono);color:var(--ink)}
+.count{margin-left:auto;font:400 10px var(--mono);color:var(--muted)}
+
+.scroll{overflow:auto;min-height:0}
+.scroll::-webkit-scrollbar{width:8px;height:8px}
+.scroll::-webkit-scrollbar-thumb{background:var(--line-soft);border-radius:4px}
+
+table{width:100%;border-collapse:collapse}
+thead th{font:500 8px var(--mono);color:var(--muted);letter-spacing:.06em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--slate);background:var(--paper);position:sticky;top:0;z-index:2}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--ink);vertical-align:middle}
+tbody tr:hover{background:#F7F5EF}
+.sub{color:var(--muted);font-size:9px}
+
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.sq{display:inline-block;width:6px;height:6px;margin-right:5px;vertical-align:1px}
+.tag{display:inline-block;border:1px solid var(--slate);border-radius:2px;padding:1px 5px;font:500 9px var(--mono);color:var(--slate);margin-right:3px}
+.tag.warn{border-color:var(--amber);color:var(--amber-deep);background:var(--amber-pale)}
+.tag.sens{border-color:var(--coral);color:var(--coral)}
+.tag.ok{border-color:var(--tide);color:var(--tide)}
+.overdue{color:var(--coral);font-weight:600}
+
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px;text-align:center}
+.empty .mark{width:34px;height:34px;border:1px dashed var(--slate);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px}
+.empty .t{font:500 12px var(--mono);color:var(--ink)}
+.empty .d{font:400 10px var(--mono);color:var(--muted);max-width:290px;line-height:1.6}
+.btn{border:1px solid var(--slate);border-radius:3px;padding:6px 12px;font:500 10px var(--mono);color:var(--ink);letter-spacing:.04em}
+.btn:hover{background:var(--panel)}
+.btn.primary{border-color:var(--amber);background:var(--amber-pale);color:var(--amber-deep);border-width:1.5px}
+.btn.primary:hover{background:#F6E4C6}
+
+/* ---------- map ---------- */
+.mapwrap{flex:1;position:relative;min-width:0;background:var(--map-water);overflow:hidden}
+.mapwrap svg.base{position:absolute;inset:0;width:100%;height:100%}
+.maplabel{position:absolute;bottom:8px;right:10px;font:400 9px var(--mono);color:var(--muted);background:rgba(253,252,249,.85);padding:3px 7px;border-radius:3px}
+.float{position:absolute;background:var(--paper);border:1px solid var(--slate);border-radius:4px;z-index:20}
+.float .fh{font:600 8px var(--mono);color:var(--muted);letter-spacing:.08em;padding:8px 10px 6px}
+.layers{top:12px;left:12px;width:198px}
+.lgroup{font:600 7px var(--mono);color:var(--muted);letter-spacing:.08em;padding:7px 10px 3px;border-top:1px solid var(--line-soft)}
+.lrow{display:flex;align-items:center;gap:7px;padding:4px 10px;font:400 10px var(--mono);color:var(--ink)}
+.lrow:hover{background:#F3F1EB}
+.sw{width:8px;height:8px;flex:none}
+.toggle{margin-left:auto;width:22px;height:12px;border-radius:6px;border:1px solid var(--slate);position:relative;flex:none}
+.toggle i{position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;background:var(--slate);transition:transform .14s}
+.toggle.on{background:var(--tide);border-color:var(--tide)}
+.toggle.on i{background:#fff;transform:translateX(10px)}
+.legend{bottom:12px;left:12px;width:150px}
+.tools{top:12px;right:12px;display:flex;gap:6px;z-index:20}
+.tool{border:1px solid var(--slate);border-radius:3px;padding:5px 9px;font:500 9px var(--mono);color:var(--slate);background:var(--paper);letter-spacing:.05em}
+.tool:hover{border-color:var(--ink);color:var(--ink)}
+.tool.live{border-color:var(--tide);color:var(--tide)}
+.tool.live .pulse{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tide);margin-right:4px;vertical-align:1px;animation:beat 2s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.tool.live .pulse{animation:none}}
+
+.marker{cursor:pointer}
+.marker circle,.marker rect,.marker polygon{transition:opacity .12s}
+.marker:hover .hit{opacity:.22}
+.marker.sel .ring2{opacity:1}
+
+/* ---------- selected feature card ---------- */
+.card{position:absolute;top:12px;right:12px;width:290px;background:var(--paper);border:1.5px solid var(--amber);border-radius:4px;z-index:30;animation:slidein .18s ease-out}
+@keyframes slidein{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.card{animation:none}}
+.card .ch{background:var(--amber-pale);padding:8px 11px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid var(--amber)}
+.card .ck{font:600 8px var(--mono);color:var(--amber-deep);letter-spacing:.08em}
+.card .cn{font:600 12px var(--display);color:var(--ink);margin-top:3px}
+.card .cid{font:400 9px var(--mono);color:var(--amber-deep);margin-top:1px}
+.card .x{font-size:14px;line-height:1;color:var(--amber-deep);flex:none}
+.card .grid{display:grid;grid-template-columns:1fr 1fr}
+.card .cell{padding:8px 11px;border-bottom:1px solid var(--line-soft)}
+.card .cell:nth-child(odd){border-right:1px solid var(--line-soft)}
+.card .cell .k{font:500 7px var(--mono);color:var(--muted);letter-spacing:.06em}
+.card .cell .v{font:500 10px var(--mono);color:var(--ink);margin-top:2px}
+.sensband{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--line-soft)}
+.sensband .n{font:600 17px var(--mono);color:var(--coral)}
+.sensband .d{font:400 9px var(--mono);color:var(--coral);line-height:1.4}
+.card .foot{padding:9px 11px}
+
+/* ---------- dock ---------- */
+.dock{flex:none;border-top:1px solid var(--ink);background:var(--paper)}
+.dock-readiness{display:grid;grid-template-columns:repeat(6,1fr);height:104px}
+.rcard{border-right:1px solid var(--line-soft);padding:11px 12px;display:flex;flex-direction:column;gap:2px}
+.rcard:last-child{border-right:none}
+.rcard .k{font:500 8px var(--mono);color:var(--muted);letter-spacing:.06em}
+.rcard .v{font:600 26px var(--mono);color:var(--ink);line-height:1.05;margin-top:2px}
+.rcard .v small{font-size:12px;font-weight:400;color:var(--muted)}
+.rcard .d{font:400 9px var(--mono);color:var(--slate);line-height:1.4;margin-top:auto}
+.rcard.flag{background:#FCF8F1;border-left:2px solid var(--amber)}
+.rcard.flag .v{color:var(--amber-deep)}
+.dock-ops{display:flex;height:104px;background:var(--amber-pale);border-top:2px solid var(--amber)}
+.ops-id{padding:11px 14px;border-right:1px solid rgba(133,79,11,.22);min-width:300px;display:flex;flex-direction:column;gap:2px}
+.ops-id .k{font:600 8px var(--mono);color:var(--amber-deep);letter-spacing:.08em}
+.ops-id .n{font:700 15px var(--display);color:var(--ink);margin-top:3px}
+.ops-id .d{font:400 9px var(--mono);color:var(--amber-deep);margin-top:auto}
+.ops-cell{flex:1;padding:11px 14px;border-right:1px solid rgba(133,79,11,.22);display:flex;flex-direction:column;gap:2px}
+.ops-cell .k{font:500 8px var(--mono);color:var(--amber-deep);letter-spacing:.06em}
+.ops-cell .v{font:600 22px var(--mono);color:var(--ink);line-height:1.05;margin-top:2px}
+.ops-cell .d{font:400 9px var(--mono);color:var(--amber-deep);margin-top:auto}
+.ops-act{padding:11px 14px;display:flex;align-items:center;flex:none}
+
+/* ---------- incident page ---------- */
+.ihead{flex:none;border-bottom:1px solid var(--line-soft);background:var(--amber-pale);display:flex;align-items:stretch;gap:0}
+.ihead .blk{padding:10px 14px;border-right:1px solid rgba(133,79,11,.22);display:flex;flex-direction:column;gap:2px;justify-content:center}
+.ihead .k{font:600 8px var(--mono);color:var(--amber-deep);letter-spacing:.08em}
+.ihead .n{font:700 14px var(--display);color:var(--ink)}
+.ihead .d{font:400 9px var(--mono);color:var(--amber-deep)}
+.ihead .v{font:600 15px var(--mono);color:var(--ink)}
+.tabs{flex:none;display:flex;border-bottom:1px solid var(--slate);background:var(--paper);padding:0 6px}
+.tab{padding:9px 13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;font:500 10px var(--mono);color:var(--slate);letter-spacing:.04em}
+.tab:hover{color:var(--ink)}
+.tab .b{border:1px solid var(--line-soft);border-radius:8px;padding:0 5px;font:500 9px var(--mono);color:var(--muted);min-width:16px;text-align:center}
+.tab.on{color:var(--ink);border-bottom-color:var(--amber);font-weight:600}
+.tab.on .b{border-color:var(--amber);background:var(--amber-pale);color:var(--amber-deep)}
+.obs{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line-soft)}
+.obs:hover{background:#F7F5EF}
+.thumb{width:46px;height:46px;flex:none;border:1px solid var(--line-soft);background:var(--map-water-2);display:flex;align-items:center;justify-content:center;font:400 7px var(--mono);color:var(--muted)}
+.obs .t{font:500 11px var(--mono);color:var(--ink)}
+.obs .m{font:400 9px var(--mono);color:var(--muted);margin-top:3px;line-height:1.5}
+.pin{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--paper);border:1.5px solid var(--amber);color:var(--amber-deep);font:600 9px var(--mono);display:flex;align-items:center;justify-content:center}
+
+/* ---------- detail panels ---------- */
+.panel{width:300px;flex:none;border-left:1px solid var(--slate);display:flex;flex-direction:column;background:var(--paper)}
+.panel .ph{padding:9px 12px;border-bottom:1px solid var(--slate);background:var(--panel)}
+.panel .pk{font:600 8px var(--mono);color:var(--muted);letter-spacing:.08em}
+.panel .pn{font:600 12px var(--display);color:var(--ink);margin-top:3px}
+.field{padding:9px 12px;border-bottom:1px solid var(--line-soft)}
+.field .k{font:500 7px var(--mono);color:var(--muted);letter-spacing:.06em}
+.field .v{font:400 10px var(--mono);color:var(--ink);margin-top:3px;line-height:1.6}
+.pdf{margin:12px;border:1px dashed var(--slate);height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--muted);font:400 9px var(--mono);background:#FAF8F3}
+.listcol{width:250px;flex:none;border-left:1px solid var(--slate);display:flex;flex-direction:column}
+.lrowitem{padding:9px 12px;border-bottom:1px solid var(--line-soft)}
+.lrowitem:hover{background:#F7F5EF}
+.lrowitem.on{background:var(--panel);border-left:2px solid var(--violet)}
+.lrowitem .t{font:600 10px var(--mono);color:var(--ink)}
+.lrowitem .d{font:400 9px var(--mono);color:var(--muted);margin-top:2px}
+
+/* ---------- refuge decision tree ---------- */
+.tree{padding:12px 14px}
+.q{border:1px solid var(--slate);border-radius:3px;padding:9px 11px;font:400 10px var(--mono);color:var(--ink);line-height:1.5;background:var(--paper)}
+.branch{display:flex;gap:8px;padding:6px 0 6px 14px}
+.branch .opt{flex:1;border:1px solid var(--line-soft);border-radius:3px;padding:6px 9px;font:500 9px var(--mono);color:var(--slate)}
+.branch .opt:hover{border-color:var(--ink);color:var(--ink)}
+.branch .opt.on{border-color:var(--amber);background:var(--amber-pale);color:var(--amber-deep)}
+.outcomes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.outcome{border:1px solid var(--line-soft);border-radius:3px;padding:9px}
+.outcome .t{font:600 10px var(--mono);color:var(--slate)}
+.outcome .d{font:400 9px var(--mono);color:var(--muted);margin-top:3px;line-height:1.4}
+.outcome.hit{border-color:var(--tide);border-width:1.5px;background:#F1FAF6}
+.outcome.hit .t{color:var(--tide)}
+.consider{border-top:1px solid var(--slate);padding:11px 14px}
+.consider .ck{font:600 8px var(--mono);color:var(--muted);letter-spacing:.08em;margin-bottom:7px}
+.consider li{list-style:none;font:400 9px var(--mono);color:var(--ink);line-height:1.6;padding-left:12px;position:relative;margin-bottom:5px}
+.consider li:before{content:'';position:absolute;left:0;top:6px;width:4px;height:4px;background:var(--slate)}
+.consider li.sens:before{background:var(--coral)}
+
+/* ---------- prototype hint bar ---------- */
+.hint{position:fixed;bottom:0;left:0;right:0;height:26px;background:var(--ink);color:#E8E6E0;display:flex;align-items:center;gap:14px;padding:0 14px;font:400 9px var(--mono);z-index:200}
+.hint b{color:#fff;font-weight:500}
+.hint .close{margin-left:auto;cursor:pointer;font-size:12px}
+body.hinted #app{height:calc(100vh - 26px)}
+</style>
+</head>
+<body class="hinted">
+<div id="app"></div>
+<div class="hint" id="hint">
+  <b>Prototype</b>
+  <span>Pick an incident in the switcher to flip the dock · click a map marker · try the Files and ICS 209 tabs (empty states) · GRS-14 links jump to the GRS page</span>
+  <span class="close" id="hintclose">✕</span>
+</div>
+
+<script>
+/* ============================================================
+   DATA — stands in for the ArcGIS feature service. Every list
+   here maps to a layer or related table in the real system.
+   ============================================================ */
+const DATA = {
+  incidents:[
+    {id:'2026-014', name:'Diesel sheen, Blackney Passage', status:'active',
+     tier:2, product:'Marine diesel', opened:'08:15', elapsed:'6h 07m',
+     grs:'GRS-14', grsName:'Blackfish Sound', grsDist:'1.8 km',
+     sensitive:3, tasks:7, unassigned:2, obs:12, lastObs:'22 min ago',
+     x:470, y:368},
+    {id:'2026-011', name:'Creosote debris, Malcolm Island', status:'closed',
+     tier:3, product:'Treated timber', opened:'Jul 22 09:30', elapsed:'closed Jul 26',
+     grs:'GRS-25', grsName:'Mitchell Bay', grsDist:'3.4 km',
+     sensitive:0, tasks:0, unassigned:0, obs:5, lastObs:'Jul 26',
+     x:255, y:236}
+  ],
+  readiness:[
+    {k:'TEAM READINESS', v:'8', unit:'/9', d:'current on required certs'},
+    {k:'CERTS EXPIRING ≤60D', v:'2', d:'soonest: OFA L3, Sep 2', flag:true},
+    {k:'SERVICE DUE', v:'1', d:'Boom trailer 2 · Port McNeill', flag:true},
+    {k:'EQUIPMENT READY', v:'18', unit:'/20', d:'2 units in service'},
+    {k:'LAST EXERCISE', v:'34d', d:'Boom deployment, Alert Bay'},
+    {k:'NEXT DRILL', v:'Aug 6', d:'Tabletop · Telegraph Cove'}
+  ],
+  observations:[
+    {t:'Sheen extent — east edge', sev:'MODERATE', type:'Sheen', who:'M. Wadhams, K\u2019ómoks Guardian', at:'14:00', where:'Blackney Passage E', photo:true},
+    {t:'Wildlife — harbour seals hauled out', sev:'SENSITIVE', type:'Wildlife', who:'J. Henderson, Vessel Tenas', at:'13:38', where:'Hanson Island S', photo:true},
+    {t:'Current set toward Blackfish Sound', sev:'LOW', type:'Conditions', who:'D. Svanvik, Vessel Kwakiutl Star', at:'12:51', where:'mid-channel', photo:true},
+    {t:'Source vessel identified — FV Ocean Dawn', sev:'MODERATE', type:'Source', who:'M. Wadhams, K\u2019ómoks Guardian', at:'11:47', where:'Telegraph Cove dock', photo:false},
+    {t:'Initial sheen report', sev:'MODERATE', type:'Sheen', who:'A. Speck, Alert Bay harbourmaster', at:'08:02', where:'Blackney Passage', photo:true}
+  ],
+  tasks:[
+    {t:'Stage boom at GRS-14', who:'Vessel Tenas', due:'15:30 today', st:'In progress'},
+    {t:'Shoreline assessment — Hanson Island S', who:'A. Speck', due:'16:00 today', st:'In progress'},
+    {t:'Confirm source vessel containment', who:'M. Wadhams', due:'14:30 today', st:'Complete'},
+    {t:'Notify Mamalilikulla rep — sensitive site proximity', who:'C. Child', due:'12:00 today', st:'Complete'},
+    {t:'Deploy sorbent, Blackney E shoreline', who:'—', due:'17:00 today', st:'Unassigned'},
+    {t:'Arrange skimmer transit from Alert Bay', who:'—', due:'18:00 today', st:'Unassigned'},
+    {t:'Tide-window plan for overnight monitoring', who:'D. Svanvik', due:'19:00 today', st:'Not started'}
+  ],
+  log:[
+    {at:'14:00', inc:'2026-014', e:'Observation added: sheen extent — east edge, moderate', unit:'Guardian 1', by:'M. Wadhams'},
+    {at:'13:42', inc:'2026-014', e:'Task assigned: stage boom at GRS-14 → Vessel Tenas', unit:'Ops', by:'C. Child'},
+    {at:'13:38', inc:'2026-014', e:'Observation added: wildlife — harbour seals hauled out', unit:'Vessel Tenas', by:'J. Henderson', sens:true},
+    {at:'11:20', inc:'—', e:'Equipment check completed: boom trailer 1, Port McNeill cache', unit:'Cache', by:'D. Svanvik'},
+    {at:'08:15', inc:'2026-014', e:'Incident opened: diesel sheen, Blackney Passage · tier 2', unit:'Ops', by:'C. Child'},
+    {at:'Jul 27 16:04', inc:'—', e:'Cert renewal recorded: SVOP — R. Alfred', unit:'—', by:'Program admin'},
+    {at:'Jul 26 09:30', inc:'2026-011', e:'Incident closed: creosote debris, Malcolm Island — resolved', unit:'Ops', by:'C. Child'}
+  ],
+  crew:[
+    {n:'Marion Wadhams', r:'Guardian lead', nat:'K\u2019ómoks', c:['SVOP','MED A3','SPILL OPS'], exp:'412d', soon:false, av:'Yes'},
+    {n:'James Henderson', r:'Vessel operator', nat:'Tlowitsis', c:['SVOP','OFA L3 · 36d'], exp:'36d — Sep 2', soon:true, av:'Yes'},
+    {n:'Dana Svanvik', r:'Equipment tech', nat:'Wei Wai Kum', c:['SPILL OPS','FORKLIFT'], exp:'198d', soon:false, av:'Yes'},
+    {n:'Robert Alfred', r:'Vessel operator', nat:'\u2019Namgis', c:['SVOP','ROC-M'], exp:'365d', soon:false, av:'Away until Aug 4'},
+    {n:'Carol Child', r:'Ops coordinator', nat:'Mamalilikulla', c:['ICS 200','SPILL OPS · 54d'], exp:'54d — Sep 20', soon:true, av:'Yes'},
+    {n:'Aaron Speck', r:'Shoreline lead', nat:'\u2019Namgis', c:['SPILL OPS','SWIFTWATER'], exp:'289d', soon:false, av:'Yes'}
+  ],
+  deployable:[
+    {n:'Vessel Tenas', t:'Landing craft', loc:'Alert Bay', st:'Ready', svc:'Oct 12'},
+    {n:'Vessel Kwakiutl Star', t:'Crew boat', loc:'Port McNeill', st:'Ready', svc:'Sep 3'},
+    {n:'Boom trailer 1', t:'500 m curtain', loc:'Port McNeill cache', st:'Ready', svc:'Nov 8'},
+    {n:'Boom trailer 2', t:'300 m curtain', loc:'Port McNeill cache', st:'In service', svc:'OVERDUE 12d', od:true},
+    {n:'Skimmer unit A', t:'Drum skimmer', loc:'Alert Bay cache', st:'Ready', svc:'Dec 1'},
+    {n:'Guardian 1', t:'RHIB patrol', loc:'Telegraph Cove', st:'Ready', svc:'Aug 22'}
+  ],
+  infrastructure:[
+    {n:'Port McNeill cache', t:'Equipment cache', loc:'Port McNeill', st:'Stocked', svc:'Sep 15'},
+    {n:'Alert Bay cache', t:'Equipment cache', loc:'Alert Bay', st:'Stocked', svc:'Sep 15'},
+    {n:'Telegraph Cove fuel dock', t:'Fuel', loc:'Telegraph Cove', st:'Open', svc:'—'},
+    {n:'Sointula launch point', t:'Launch ramp', loc:'Malcolm Island', st:'Open', svc:'OVERDUE 4d', od:true}
+  ],
+  grs:[
+    {id:'GRS-08', name:'Robson Bight W', shore:'Gravel beach', tactic:'deflection', x:600, y:452,
+     shoreFull:'Gravel beach, steep face', boom:'Deflection — 150 m curtain angled to W current, single anchor',
+     access:'Boat only · nearest launch Telegraph Cove, 35 min · no beach landing above half tide', pdf:'GRS-08 package v2'},
+    {id:'GRS-14', name:'Blackfish Sound', shore:'Pebble beach', tactic:'exclusion', x:440, y:288,
+     shoreFull:'Pebble beach, moderate slope', boom:'Exclusion — 200 m curtain, two anchor points, chevron to E eddy',
+     access:'Boat only · nearest launch Telegraph Cove, 25 min · beach landing OK below half tide', pdf:'GRS-14 package v3'},
+    {id:'GRS-17', name:'Knight Inlet mouth', shore:'Estuary', tactic:'exclusion', x:688, y:168,
+     shoreFull:'Estuary, marsh fringe — high sensitivity', boom:'Exclusion — 300 m curtain across channel mouth, four anchors',
+     access:'Boat only · nearest launch Telegraph Cove, 60 min · shallow draft required', pdf:'GRS-17 package v2'},
+    {id:'GRS-22', name:'Beaver Cove', shore:'Log sort', tactic:'diversion', x:520, y:470,
+     shoreFull:'Log sort, artificial shoreline', boom:'Diversion — 120 m curtain to collection point at SE corner',
+     access:'Road access · Beaver Cove log sort yard · trailer launch on site', pdf:'GRS-22 package v3'},
+    {id:'GRS-25', name:'Mitchell Bay', shore:'Sand flat', tactic:'exclusion', x:232, y:258,
+     shoreFull:'Sand flat, gentle slope, wide intertidal', boom:'Exclusion — 180 m curtain, two anchors, tidal slack deployment only',
+     access:'Road + boat · Sointula launch 10 min · extensive drying flat at low water', pdf:'GRS-25 package v2'}
+  ],
+  refuge:[
+    {id:'POR-3', name:'Beaver Cove', x:520, y:456, hold:'Mud/sand, fair · 12–18 m', exp:'Exposed SE', prescat:'Gravel 70% · log sort 30%', sens:'2 sites within 5 km', endorsed:false},
+    {id:'POR-5', name:'Port Harvey', x:640, y:250, hold:'Mud, good · 18–24 m', exp:'Sheltered SE–NW', prescat:'Rock 60% · gravel 40%', sens:'1 site within 5 km', endorsed:true},
+    {id:'POR-7', name:'Growler Cove', x:530, y:392, hold:'Rock/mud, fair · 10–16 m', exp:'Exposed W', prescat:'Rock 85% · gravel 15%', sens:'3 sites within 5 km', endorsed:false}
+  ],
+  docs:[
+    {n:'Marine Spill Response Plan — North Island', t:'Response plan', v:'v4.2', u:'May 14, 2026'},
+    {n:'GRS Package — Johnstone Strait sites', t:'GRS package', v:'v3.0', u:'Mar 2, 2026'},
+    {n:'Mutual Aid Agreement — WCMRC', t:'Agreement', v:'v2.1', u:'Jan 20, 2026'},
+    {n:'Guardian Program Field SOPs', t:'SOP', v:'v1.8', u:'Jun 30, 2026'}
+  ],
+  exScheduled:[
+    {d:'Aug 6', t:'Tabletop · Telegraph Cove', s:'tier 2 scenario · all crew'},
+    {d:'Sep 18', t:'Boom deployment · GRS-22', s:'on-water · vessels Tenas + Guardian 1'}
+  ],
+  exHistory:[
+    {d:'Jun 24, 2026', t:'Boom deployment — Alert Bay breakwater', s:'on-water'},
+    {d:'Apr 9, 2026', t:'Tabletop — Knight Inlet fuel barge scenario', s:'tabletop'},
+    {d:'Feb 12, 2026', t:'Communications drill — all nations', s:'comms'}
+  ],
+  resources:[
+    {n:'Vessel Tenas', x:300, y:316},{n:'Vessel Kwakiutl Star', x:190, y:400},
+    {n:'Guardian 1', x:500, y:466}
+  ],
+  infraPts:[
+    {n:'Port McNeill cache', x:180, y:414},{n:'Alert Bay cache', x:312, y:326},
+    {n:'Telegraph Cove fuel dock', x:496, y:458},{n:'Sointula launch point', x:244, y:246}
+  ],
+  sensitivePts:[{x:420,y:310},{x:522,y:404},{x:352,y:268},{x:672,y:196}]
+};
+
+const PAGES = [
+  {id:'cop',      lbl:'COP',    icon:'M2 4l4-1.5L10 4l4-1.5v9.5L10 13.5 6 12 2 13.5z M6 2.5v9.5 M10 4v9.5'},
+  {id:'incident', lbl:'INCDT',  icon:'M8 2l5 2v3.6c0 3-1.9 5.1-5 6.2-3.1-1.1-5-3.2-5-6.2V4z M8 5.5v3.2 M8 10.4h.01'},
+  {id:'log',      lbl:'LOG',    icon:'M2.5 4h.01 M2.5 8h.01 M2.5 12h.01 M5.5 4H14 M5.5 8H14 M5.5 12H10'},
+  {id:'assets',   lbl:'ASSETS', icon:'M8 2.2l5.4 3v5.6L8 13.8 2.6 10.8V5.2z M2.6 5.2L8 8.2l5.4-3 M8 8.2v5.6'},
+  {id:'crew',     lbl:'CREW',   icon:'M8 3.5a2.4 2.4 0 110 4.8 2.4 2.4 0 010-4.8z M3 13.5c.3-2.6 2.4-4 5-4s4.7 1.4 5 4'},
+  {id:'grs',      lbl:'GRS',    icon:'M8 14c-2.6-2.2-4.7-4.6-4.7-7.1a4.7 4.7 0 019.4 0C12.7 9.4 10.6 11.8 8 14z M8 5.4a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2z'},
+  {id:'refuge',   lbl:'REFUGE', icon:'M8 2.4v11.2 M4.4 5.2h7.2 M3.2 9.6a4.8 4.8 0 009.6 0 M8 2.4a1.1 1.1 0 010 2.2 1.1 1.1 0 010-2.2z'},
+  {id:'plans',    lbl:'PLANS',  icon:'M4.5 2h5l3.5 3.5V14h-8.5z M9.5 2v3.5H13 M6.5 9h4 M6.5 11.5h4'}
+];
+
+/* ============================================================
+   STATE — one object. Every render reads from here and nothing
+   else. In React this becomes useState / useReducer; the page
+   functions below become components.
+   ============================================================ */
+const state = {
+  page:'cop',
+  activeIncidentId:null,   // null = readiness mode. This one field drives the dock flip.
+  menuOpen:false,
+  selectedFeature:null,    // incident id shown in the map card
+  incidentTab:'obs',
+  grsSelected:'GRS-14',
+  refugeSelected:'POR-5',
+  logFilter:'all',
+  answers:{q1:null,q2:null,q3:null},
+  layers:{active:true,historic:true,deployable:true,infra:true,grs:true,sens:true}
+};
+
+const inc = () => DATA.incidents.find(i => i.id === state.activeIncidentId) || null;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- shell ---------- */
+function navRail(){
+  return `<nav class="rail">
+    <div class="crest">NC</div>
+    ${PAGES.map(p => `
+      <button class="navitem ${state.page===p.id?'on':''}" data-nav="${p.id}" aria-current="${state.page===p.id}">
+        <span class="glyph"><svg viewBox="0 0 16 16"><path d="${p.icon}"/></svg></span>
+        <span class="lbl">${p.lbl}</span>
+      </button>`).join('')}
+    <div style="flex:1"></div>
+    <div class="avatar">JR</div>
+  </nav>`;
+}
+
+function header(){
+  const a = inc();
+  const label = a ? `${a.id} · ${a.name}` : 'No active incident · Readiness';
+  return `<div class="header">
+    <div class="wordmark"><span class="ring"></span><span class="txt">Nanwakolas Marine COP</span></div>
+    <div class="switcher">
+      <button class="switcher-btn ${a?'live':''}" data-menu="1">
+        <span>${esc(label)}</span><span>▾</span>
+      </button>
+      ${state.menuOpen ? `<div class="menu">
+        <button class="menu-item" data-pick="none"><div class="m1">No active incident</div><div class="m2">Readiness mode</div></button>
+        ${DATA.incidents.map(i => `<button class="menu-item" data-pick="${i.id}">
+          <div class="m1">${i.id} · ${esc(i.name)}</div>
+          <div class="m2">tier ${i.tier} · ${i.status}${i.status==='active'?' · opened '+i.opened:''}</div>
+        </button>`).join('')}
+      </div>` : ''}
+    </div>
+    <div class="search">Search sites, vessels, crew</div>
+    <div class="clock">Territory time 14:22 PDT</div>
+  </div>`;
+}
+
+/* ---------- shared map ---------- */
+function mapBase(){
+  return `<svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="800" height="600" fill="var(--map-water)"/>
+    <g stroke="var(--map-water-2)" stroke-width="1">
+      ${Array.from({length:9},(_,i)=>`<line x1="0" y1="${i*70}" x2="800" y2="${i*70}"/>`).join('')}
+      ${Array.from({length:11},(_,i)=>`<line x1="${i*80}" y1="0" x2="${i*80}" y2="600"/>`).join('')}
+    </g>
+    <path d="M0,600 L0,392 C64,382 128,404 194,424 C262,444 332,470 402,486 C472,500 544,512 622,516 C702,520 762,510 800,500 L800,600 Z"
+      fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <path d="M0,0 L800,0 L800,116 C742,128 694,150 646,172 C588,198 528,204 468,192 C406,180 356,154 306,130 C254,104 192,80 122,70 C72,62 32,58 0,60 Z"
+      fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <path d="M700,116 C712,150 720,190 714,222 C748,214 776,196 800,180 L800,116 Z"
+      fill="var(--map-water)" stroke="var(--slate)" stroke-width="0.6"/>
+    <ellipse cx="252" cy="228" rx="66" ry="30" fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <ellipse cx="316" cy="330" rx="30" ry="17" fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <ellipse cx="436" cy="342" rx="58" ry="27" fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <ellipse cx="574" cy="300" rx="74" ry="34" fill="var(--map-land)" stroke="var(--slate)" stroke-width="0.8"/>
+    <g font-family="IBM Plex Mono" fill="var(--muted)">
+      <text x="360" y="540" font-size="11" letter-spacing="1.6">VANCOUVER ISLAND</text>
+      <text x="60" y="40" font-size="11" letter-spacing="1.6">MAINLAND BC</text>
+      <text x="252" y="232" font-size="8" text-anchor="middle">Malcolm I.</text>
+      <text x="436" y="346" font-size="8" text-anchor="middle">Hanson I.</text>
+      <text x="574" y="304" font-size="8" text-anchor="middle">W. Cracroft I.</text>
+      <text x="316" y="333" font-size="7" text-anchor="middle">Cormorant</text>
+      <text x="742" y="176" font-size="8">Knight Inlet</text>
+      <text x="300" y="452" font-size="8" font-style="italic">Johnstone Strait</text>
+      <text x="452" y="252" font-size="8" font-style="italic">Blackfish Sound</text>
+      <text x="486" y="392" font-size="7" font-style="italic">Blackney Psg</text>
+      <text x="186" y="436" font-size="7">Port McNeill</text>
+      <text x="330" y="352" font-size="7">Alert Bay</text>
+      <text x="500" y="490" font-size="7">Telegraph Cove</text>
+      <text x="244" y="212" font-size="7">Sointula</text>
+    </g>
+  </svg>`;
+}
+
+function marker(kind, x, y, opts){
+  opts = opts || {};
+  const sel = opts.sel ? 'sel' : '';
+  const attrs = `class="marker ${sel}" ${opts.click ? `data-${opts.click}="${opts.id}"` : ''} tabindex="0" role="button" aria-label="${esc(opts.label||kind)}"`;
+  if(kind === 'incident'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="ring2" r="17" fill="none" stroke="var(--amber)" stroke-width="1.2" opacity="${opts.sel?1:0}"/>
+      <circle class="hit" r="15" fill="var(--amber)" opacity="0"/>
+      <circle r="9" fill="var(--amber-pale)" stroke="var(--amber)" stroke-width="2"/>
+      <circle r="3.2" fill="var(--amber)"/></g>`;
+  }
+  if(kind === 'historic'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="hit" r="12" fill="var(--slate)" opacity="0"/>
+      <circle r="5.5" fill="#fff" stroke="var(--slate)" stroke-width="1.4"/></g>`;
+  }
+  if(kind === 'grs'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="ring2" r="14" fill="none" stroke="var(--violet)" stroke-width="1.2" opacity="${opts.sel?1:0}"/>
+      <circle class="hit" r="13" fill="var(--violet)" opacity="0"/>
+      <rect x="-5.5" y="-5.5" width="11" height="11" fill="#fff" stroke="var(--violet)" stroke-width="1.8"/>
+      <rect x="-2" y="-2" width="4" height="4" fill="var(--violet)"/></g>`;
+  }
+  if(kind === 'resource'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="hit" r="12" fill="var(--tide)" opacity="0"/>
+      <path d="M-6,3 L0,-6 L6,3 Z" fill="#fff" stroke="var(--tide)" stroke-width="1.6"/></g>`;
+  }
+  if(kind === 'infra'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="hit" r="12" fill="var(--copper)" opacity="0"/>
+      <rect x="-5" y="-5" width="10" height="10" fill="#fff" stroke="var(--copper)" stroke-width="1.6"/></g>`;
+  }
+  if(kind === 'sens'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <path d="M0,-6.5 L6,5 L-6,5 Z" fill="#fff" stroke="var(--coral)" stroke-width="1.6"/></g>`;
+  }
+  if(kind === 'refuge'){
+    return `<g ${attrs} transform="translate(${x},${y})">
+      <circle class="ring2" r="19" fill="none" stroke="var(--tide)" stroke-width="1.2" opacity="${opts.sel?1:0}"/>
+      <circle class="hit" r="17" fill="var(--tide)" opacity="0"/>
+      <circle r="13" fill="none" stroke="var(--tide)" stroke-width="1.2" stroke-dasharray="3 2"/>
+      <circle r="4" fill="#fff" stroke="var(--tide)" stroke-width="1.6"/></g>`;
+  }
+  return '';
+}
+
+function layerPanel(){
+  const row = (key, label, color, shape) => `
+    <div class="lrow" data-layer="${key}">
+      <span class="sw" style="${shape==='tri'
+        ? `width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid ${color}`
+        : `background:${color};${shape==='circle'?'border-radius:50%':''}`}"></span>
+      <span>${label}</span>
+      <span class="toggle ${state.layers[key]?'on':''}"><i></i></span>
+    </div>`;
+  return `<div class="float layers">
+    <div class="fh">LAYERS</div>
+    <div class="lgroup" style="border-top:none">INCIDENTS</div>
+    ${row('active','Active','var(--amber)','circle')}
+    ${row('historic','Historic','var(--slate)','circle')}
+    <div class="lgroup">RESPONSE ASSETS</div>
+    ${row('deployable','Deployable resources','var(--tide)','tri')}
+    ${row('infra','Fixed infrastructure','var(--copper)')}
+    <div class="lgroup">STRATEGY</div>
+    ${row('grs','GRS booming sites','var(--violet)')}
+    <div class="lgroup">CULTURALLY SENSITIVE</div>
+    ${row('sens','Sensitive sites','var(--coral)','tri')}
+  </div>`;
+}
+
+function copMap(){
+  const a = inc();
+  const L = state.layers;
+  return `<div class="mapwrap" data-mapbg="1">
+    ${mapBase()}
+    <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+      ${L.sens ? DATA.sensitivePts.map(p => marker('sens',p.x,p.y,{label:'Sensitive site'})).join('') : ''}
+      ${L.grs ? DATA.grs.map(g => marker('grs',g.x,g.y,{click:'grsjump',id:g.id,label:g.id+' — open GRS page'})).join('') : ''}
+      ${L.infra ? DATA.infraPts.map(p => marker('infra',p.x,p.y,{label:p.n})).join('') : ''}
+      ${L.deployable ? DATA.resources.map(p => marker('resource',p.x,p.y,{label:p.n})).join('') : ''}
+      ${L.historic ? DATA.incidents.filter(i=>i.status==='closed').map(i => marker('historic',i.x,i.y,{click:'feature',id:i.id,label:i.name})).join('') : ''}
+      ${L.active && a ? marker('incident',a.x,a.y,{click:'feature',id:a.id,sel:state.selectedFeature===a.id,label:a.name}) : ''}
+    </svg>
+    ${layerPanel()}
+    <div class="float legend">
+      <div class="fh">LEGEND</div>
+      <div class="lrow"><span class="sw" style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--tide)"></span><span>Vessel / deployable</span></div>
+      <div class="lrow"><span class="sw" style="background:var(--copper)"></span><span>Cache / dock / fuel</span></div>
+      <div class="lrow"><span class="sw" style="background:var(--violet)"></span><span>GRS site</span></div>
+      <div class="lrow"><span class="sw" style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--coral)"></span><span>Sensitive site</span></div>
+    </div>
+    <div class="tools">
+      <button class="tool live"><span class="pulse"></span>LIVE</button>
+      <button class="tool">TIME ▸</button>
+      <button class="tool">MEASURE</button>
+      <button class="tool">PRINT</button>
+    </div>
+    ${featureCard()}
+    <div class="maplabel">schematic — Johnstone Strait / Broughton Archipelago</div>
+  </div>`;
+}
+
+function featureCard(){
+  if(!state.selectedFeature) return '';
+  const f = DATA.incidents.find(i => i.id === state.selectedFeature);
+  if(!f) return '';
+  return `<div class="card">
+    <div class="ch">
+      <div>
+        <div class="ck">SELECTED INCIDENT</div>
+        <div class="cn">${esc(f.name)}</div>
+        <div class="cid">${f.id} · tier ${f.tier}</div>
+      </div>
+      <button class="x" data-clearfeature="1" aria-label="Close">✕</button>
+    </div>
+    <div class="grid">
+      <div class="cell"><div class="k">TIER</div><div class="v">${f.tier}</div></div>
+      <div class="cell"><div class="k">PRODUCT</div><div class="v">${esc(f.product)}</div></div>
+      <div class="cell"><div class="k">OPENED</div><div class="v">${f.opened} · ${f.elapsed}</div></div>
+      <div class="cell"><div class="k">NEAREST GRS</div><div class="v">${f.grs} · ${f.grsDist}</div></div>
+    </div>
+    ${f.sensitive ? `<div class="sensband">
+      <div class="n">${f.sensitive}</div>
+      <div class="d">sensitive sites within 5 km<br>access restricted</div>
+    </div>` : ''}
+    <div class="foot"><button class="btn primary" data-nav="incident" style="width:100%">OPEN INCIDENT →</button></div>
+  </div>`;
+}
+
+/* ---------- dock ---------- */
+function dock(){
+  const a = inc();
+  if(!a) {
+    return `<div class="dock"><div class="dock-readiness">
+      ${DATA.readiness.map(c => `<div class="rcard ${c.flag?'flag':''}">
+        <div class="k">${c.k}</div>
+        <div class="v">${c.v}${c.unit?`<small>${c.unit}</small>`:''}</div>
+        <div class="d">${esc(c.d)}</div>
+      </div>`).join('')}
+    </div></div>`;
+  }
+  return `<div class="dock"><div class="dock-ops">
+    <div class="ops-id">
+      <div class="k">ACTIVE INCIDENT · TIER ${a.tier}</div>
+      <div class="n">${esc(a.name)}</div>
+      <div class="d">${a.id} · ${esc(a.product)}</div>
+    </div>
+    <div class="ops-cell"><div class="k">ELAPSED</div><div class="v">${a.elapsed}</div><div class="d">opened ${a.opened} PDT</div></div>
+    <div class="ops-cell"><div class="k">OPEN TASKS</div><div class="v">${a.tasks}</div><div class="d">${a.unassigned} unassigned</div></div>
+    <div class="ops-cell"><div class="k">OBSERVATIONS</div><div class="v">${a.obs}</div><div class="d">last ${a.lastObs}</div></div>
+    <div class="ops-cell"><div class="k">NEAREST GRS</div><div class="v">${a.grs}</div><div class="d">${esc(a.grsName)} · ${a.grsDist}</div></div>
+    <div class="ops-act"><button class="btn primary" data-nav="incident">OPEN INCIDENT →</button></div>
+  </div></div>`;
+}
+
+/* ============================================================
+   PAGES
+   ============================================================ */
+function pageCOP(){
+  return `<div class="body">${copMap()}</div>${dock()}`;
+}
+
+function pageIncident(){
+  const a = inc();
+  if(!a) return `<div class="body"><div class="empty">
+    <div class="mark">◇</div>
+    <div class="t">No incident selected</div>
+    <div class="d">Pick an incident from the switcher in the header, or open one from a map marker on the COP.</div>
+    <button class="btn" data-nav="cop">GO TO COP</button>
+  </div></div>`;
+
+  const tabs = [
+    {id:'201', lbl:'ICS 201', n:1},
+    {id:'209', lbl:'ICS 209', n:0},
+    {id:'obs', lbl:'OBSERVATIONS', n:a.obs},
+    {id:'tasks', lbl:'TASKS', n:a.tasks},
+    {id:'log', lbl:'LOG', n:26},
+    {id:'files', lbl:'FILES', n:4}
+  ];
+
+  return `<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="ihead">
+      <div class="blk" style="min-width:330px">
+        <div class="k">ACTIVE INCIDENT · TIER ${a.tier}</div>
+        <div class="n">${esc(a.name)}</div>
+        <div class="d">${a.id} · ${esc(a.product.toLowerCase())} · opened ${a.opened} PDT</div>
+      </div>
+      <div class="blk"><div class="k">ELAPSED</div><div class="v">${a.elapsed}</div></div>
+      <div class="blk"><div class="k">NEAREST GRS</div>
+        <button class="btn" data-grsjump="${a.grs}" style="border-color:var(--amber);color:var(--amber-deep);margin-top:3px">
+          ${a.grs} · ${esc(a.grsName)} · ${a.grsDist} →
+        </button>
+      </div>
+      <div class="blk" style="border-right:none">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font:600 20px var(--mono);color:var(--coral)">${a.sensitive}</span>
+          <span style="font:400 9px var(--mono);color:var(--coral);line-height:1.4">sensitive sites<br>within 5 km</span>
+        </div>
+      </div>
+      <div class="blk" style="margin-left:auto;border-right:none;justify-content:center">
+        <button class="btn primary">+ ADD OBSERVATION</button>
+      </div>
+    </div>
+    <div class="tabs">
+      ${tabs.map(t => `<button class="tab ${state.incidentTab===t.id?'on':''}" data-tab="${t.id}">
+        <span>${t.lbl}</span><span class="b">${t.n}</span></button>`).join('')}
+    </div>
+    <div class="body">${incidentTabBody(a)}</div>
+  </div>`;
+}
+
+function incidentTabBody(a){
+  const t = state.incidentTab;
+
+  if(t === 'obs'){
+    return `<div class="scroll" style="flex:1">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--slate)">
+        <span style="font:500 10px var(--mono);color:var(--ink)">${a.obs} observations · newest first</span>
+        <button class="chip">sort ▾</button>
+      </div>
+      ${DATA.observations.map(o => `<div class="obs">
+        <div class="thumb">${o.photo?'photo':'no photo'}</div>
+        <div>
+          <div class="t">${esc(o.t)} <span class="tag ${o.sev==='SENSITIVE'?'sens':(o.sev==='MODERATE'?'warn':'')}">${o.sev}</span></div>
+          <div class="m">${esc(o.type)} · ${esc(o.who)} · ${o.at} · ${esc(o.where)}</div>
+        </div>
+      </div>`).join('')}
+      <div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 7 more</div>
+    </div>
+    <div class="mapwrap" style="max-width:420px;border-left:1px solid var(--slate)">
+      ${mapBase()}
+      <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        ${marker('incident',a.x,a.y,{label:a.name,sel:true})}
+        ${marker('grs',440,288,{label:'GRS-14'})}
+        ${DATA.sensitivePts.slice(0,3).map(p=>marker('sens',p.x,p.y,{label:'Sensitive site'})).join('')}
+      </svg>
+      <div class="pin" style="left:46%;top:56%">1</div>
+      <div class="pin" style="left:38%;top:48%">2</div>
+      <div class="pin" style="left:52%;top:62%">3</div>
+      <div class="maplabel">observation pins numbered</div>
+    </div>`;
+  }
+
+  if(t === 'tasks'){
+    return `<div class="scroll" style="flex:1">
+      <table>
+        <thead><tr><th>TASK</th><th style="width:150px">ASSIGNED TO</th><th style="width:130px">DUE</th><th style="width:110px">STATUS</th></tr></thead>
+        <tbody>${DATA.tasks.map(k => `<tr>
+          <td>${esc(k.t)}</td>
+          <td>${k.who==='—'?'<span class="sub">unassigned</span>':esc(k.who)}</td>
+          <td class="sub">${esc(k.due)}</td>
+          <td>${k.st==='Complete'?'<span class="tag ok">COMPLETE</span>'
+              :k.st==='Unassigned'?'<span class="tag warn">UNASSIGNED</span>'
+              :`<span class="tag">${k.st.toUpperCase()}</span>`}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  if(t === '201'){
+    return `<div class="scroll" style="flex:1;padding:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font:600 12px var(--display)">ICS 201 — Incident Briefing</span>
+        <span class="tag ok">SUBMITTED 09:04</span>
+        <button class="chip" style="margin-left:auto">Open in Survey123 ▸</button>
+      </div>
+      <div style="border:1px solid var(--slate);border-radius:4px">
+        <div class="field"><div class="k">SITUATION SUMMARY</div><div class="v">Marine diesel sheen reported 08:02 in Blackney Passage, estimated 200–400 L from FV Ocean Dawn fuel transfer. Sheen tracking NE on flood toward Blackfish Sound. Source contained by vessel crew 09:40.</div></div>
+        <div class="field" style="background:#FDF3EF"><div class="k" style="color:var(--coral)">SENSITIVITY</div><div class="v" style="color:var(--coral)">3 culturally sensitive sites within 5 km. Consult nation representatives before shoreline operations. Site locations restricted — generic markers only.</div></div>
+        <div class="field"><div class="k">OBJECTIVES</div><div class="v">1 · Contain and recover free product. 2 · Protect Blackfish Sound entrance (GRS-14 exclusion). 3 · Shoreline assessment Hanson Island S. 4 · Maintain consultation with nation reps.</div></div>
+        <div class="field"><div class="k">NEAREST GRS</div><div class="v">${a.grs} · ${esc(a.grsName)} · ${a.grsDist} — exclusion boom, 200 m curtain</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+          <div class="field" style="border-right:1px solid var(--line-soft)"><div class="k">INCIDENT COMMANDER</div><div class="v">C. Child</div></div>
+          <div class="field" style="border-right:1px solid var(--line-soft)"><div class="k">OPERATIONS</div><div class="v">M. Wadhams</div></div>
+          <div class="field"><div class="k">PREPARED</div><div class="v">09:04 · C. Child</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(t === 'log'){
+    return `<div class="scroll" style="flex:1">
+      <table>
+        <thead><tr><th style="width:80px">TIME</th><th>ENTRY</th><th style="width:120px">UNIT</th><th style="width:120px">LOGGED BY</th></tr></thead>
+        <tbody>${DATA.log.filter(l => l.inc === a.id).map(l => `<tr>
+          <td class="sub">${l.at}</td>
+          <td>${esc(l.e)}${l.sens?' <span class="tag sens">SENSITIVE</span>':''}</td>
+          <td class="sub">${esc(l.unit)}</td><td class="sub">${esc(l.by)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 23 more entries</div>
+    </div>`;
+  }
+
+  if(t === '209'){
+    return `<div class="empty">
+      <div class="mark">＋</div>
+      <div class="t">No ICS 209 submitted yet</div>
+      <div class="d">The 209 situation report is due at the first operational period change. Submitting opens the form pre-filled with this incident.</div>
+      <button class="btn primary">START ICS 209</button>
+    </div>`;
+  }
+
+  if(t === 'files'){
+    return `<div class="scroll" style="flex:1">
+      <table>
+        <thead><tr><th>FILE</th><th style="width:130px">SOURCE</th><th style="width:120px">ADDED</th><th style="width:80px"></th></tr></thead>
+        <tbody>
+          <tr><td>ICS 201 — 2026-014 final.pdf <span class="sub">· 240 KB</span></td><td class="sub">Survey123 report</td><td class="sub">09:12</td><td><button class="chip">Open</button></td></tr>
+          <tr><td>sheen-east-edge-1400.jpg <span class="sub">· 2.1 MB</span></td><td class="sub">Field Maps</td><td class="sub">14:02</td><td><button class="chip">Open</button></td></tr>
+          <tr><td>seals-hanson-s-1338.jpg <span class="sub">· 1.8 MB</span></td><td class="sub">Field Maps</td><td class="sub">13:40</td><td><button class="chip">Open</button></td></tr>
+          <tr><td>source-vessel-ocean-dawn.jpg <span class="sub">· 1.4 MB</span></td><td class="sub">Field Maps</td><td class="sub">11:49</td><td><button class="chip">Open</button></td></tr>
+        </tbody>
+      </table>
+      <div style="padding:12px 14px"><button class="btn">↓ EXPORT ICS PACKAGE</button></div>
+    </div>`;
+  }
+  return '';
+}
+
+function pageLog(){
+  const rows = state.logFilter === 'all' ? DATA.log : DATA.log.filter(l => l.inc === state.logFilter);
+  return `<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="pagebar">
+      <span class="pagetitle">Activity log</span>
+      <button class="chip ${state.logFilter==='all'?'on':''}" data-logfilter="all">Incident: All ▾</button>
+      <button class="chip ${state.logFilter==='2026-014'?'on':''}" data-logfilter="2026-014">2026-014</button>
+      <button class="chip ${state.logFilter==='2026-011'?'on':''}" data-logfilter="2026-011">2026-011</button>
+      <button class="chip">Date: Last 7 days ▾</button>
+      <button class="chip">Type: All entries ▾</button>
+      <button class="chip">Person: Anyone ▾</button>
+      <span class="count">${rows.length === DATA.log.length ? '142' : rows.length} entries</span>
+    </div>
+    <div class="body">
+      <div class="scroll" style="flex:1">
+        <table>
+          <thead><tr><th style="width:96px">TIME</th><th style="width:88px">INCIDENT</th><th>ENTRY</th><th style="width:110px">UNIT</th><th style="width:120px">LOGGED BY</th></tr></thead>
+          <tbody>${rows.map(l => `<tr>
+            <td class="sub">${l.at}</td>
+            <td>${l.inc==='—'?'<span class="sub">—</span>':l.inc}</td>
+            <td>${esc(l.e)}${l.sens?' <span class="tag sens">SENSITIVE</span>':''}</td>
+            <td class="sub">${esc(l.unit)}</td><td class="sub">${esc(l.by)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        ${state.logFilter==='all'?'<div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 135 more entries</div>':''}
+      </div>
+      <div class="mapwrap" style="max-width:300px;border-left:1px solid var(--slate)">
+        ${mapBase()}
+        <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+          ${DATA.incidents.map(i=>marker(i.status==='active'?'incident':'historic',i.x,i.y,{label:i.name})).join('')}
+          ${DATA.infraPts.map(p=>marker('infra',p.x,p.y,{label:p.n})).join('')}
+        </svg>
+        <div class="maplabel">entry origins</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pageAssets(){
+  const stTag = (s,od) => od ? `<span class="overdue">${s}</span>`
+    : (s==='Ready'||s==='Stocked'||s==='Open')
+      ? `<span><span class="${s==='Ready'?'dot':'sq'}" style="background:var(--${s==='Ready'?'tide':'copper'})"></span>${s}</span>`
+      : `<span><span class="dot" style="background:transparent;border:1px solid var(--slate)"></span>${s}</span>`;
+  return `<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="pagebar"><span class="pagetitle">Assets</span>
+      <span class="stat"><span class="k">DEPLOYABLE</span><span class="v">6 <small style="font-size:9px;color:var(--muted)">· 5 ready</small></span></span>
+      <span class="stat"><span class="k">INFRASTRUCTURE</span><span class="v">9 sites</span></span>
+      <button class="chip" style="margin-left:auto">Filter: All kinds ▾</button>
+    </div>
+    <div class="body">
+      <div class="scroll" style="flex:1">
+        <div style="padding:9px 14px;border-bottom:1px solid var(--slate);display:flex;justify-content:space-between;align-items:center">
+          <span style="font:600 11px var(--display)">Deployable resources</span>
+          <span class="sub">6 units · 5 ready</span>
+        </div>
+        <table>
+          <thead><tr><th>UNIT</th><th>TYPE</th><th>LOCATION</th><th style="width:110px">STATUS</th><th style="width:120px">NEXT SERVICE</th></tr></thead>
+          <tbody>${DATA.deployable.map(d => `<tr>
+            <td style="font-weight:500">${esc(d.n)}</td><td class="sub">${esc(d.t)}</td><td class="sub">${esc(d.loc)}</td>
+            <td>${stTag(d.st,false)}</td><td>${d.od?`<span class="overdue">${d.svc}</span>`:`<span class="sub">${d.svc}</span>`}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        <div style="padding:9px 14px;border-bottom:1px solid var(--slate);border-top:1px solid var(--slate);display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+          <span style="font:600 11px var(--display)">Fixed infrastructure</span>
+          <span class="sub">grouped by kind · 9 sites</span>
+        </div>
+        <table>
+          <thead><tr><th>SITE</th><th>KIND</th><th>LOCATION</th><th style="width:110px">STATUS</th><th style="width:120px">NEXT INSPECTION</th></tr></thead>
+          <tbody>${DATA.infrastructure.map(d => `<tr>
+            <td style="font-weight:500">${esc(d.n)}</td><td class="sub">${esc(d.t)}</td><td class="sub">${esc(d.loc)}</td>
+            <td>${stTag(d.st,false)}</td><td>${d.od?`<span class="overdue">${d.svc}</span>`:`<span class="sub">${d.svc}</span>`}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        <div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 5 more sites</div>
+      </div>
+      <div class="mapwrap" style="max-width:360px;border-left:1px solid var(--slate)">
+        ${mapBase()}
+        <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+          ${DATA.infraPts.map(p=>marker('infra',p.x,p.y,{label:p.n})).join('')}
+          ${DATA.resources.map(p=>marker('resource',p.x,p.y,{label:p.n})).join('')}
+        </svg>
+        <div class="float legend" style="width:132px">
+          <div class="lrow"><span class="sw" style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--tide)"></span><span>Deployable</span></div>
+          <div class="lrow"><span class="sw" style="background:var(--copper)"></span><span>Infrastructure</span></div>
+        </div>
+        <div class="maplabel">asset locations</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pageCrew(){
+  return `<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="pagebar">
+      <span class="pagetitle">Crew register</span>
+      <span class="stat"><span class="k">TEAM READINESS</span><span class="v">8/9</span></span>
+      <span class="stat"><span class="k">CERTS ≤60D</span><span class="v" style="color:var(--amber-deep)">2</span></span>
+      <span class="stat"><span class="k">AVAILABLE TODAY</span><span class="v">7</span></span>
+      <button class="chip" style="margin-left:auto">Filter: All nations ▾</button>
+    </div>
+    <div class="body"><div class="scroll" style="flex:1">
+      <table>
+        <thead><tr><th>NAME</th><th>ROLE</th><th>NATION / COMMUNITY</th><th>CERTIFICATIONS</th><th style="width:130px">SOONEST EXPIRY</th><th style="width:150px">AVAILABLE</th></tr></thead>
+        <tbody>${DATA.crew.map(c => `<tr>
+          <td style="font-weight:500">${esc(c.n)}</td>
+          <td class="sub">${esc(c.r)}</td>
+          <td class="sub">${esc(c.nat)}</td>
+          <td>${c.c.map(x => `<span class="tag ${x.includes('·')?'warn':''}">${esc(x)}</span>`).join('')}</td>
+          <td>${c.soon?`<span style="color:var(--amber-deep);font-weight:600">${esc(c.exp)}</span>`:`<span class="sub">${esc(c.exp)}</span>`}</td>
+          <td>${c.av==='Yes'
+            ?'<span><span class="dot" style="background:var(--tide)"></span>Yes</span>'
+            :`<span class="sub"><span class="dot" style="background:transparent;border:1px solid var(--slate)"></span>${esc(c.av)}</span>`}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 3 more crew</div>
+    </div></div>
+  </div>`;
+}
+
+function pageGRS(){
+  const g = DATA.grs.find(s => s.id === state.grsSelected) || DATA.grs[1];
+  return `<div class="body">
+    <div class="mapwrap">
+      ${mapBase()}
+      <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        ${DATA.sensitivePts.map(p=>marker('sens',p.x,p.y,{label:'Sensitive site'})).join('')}
+        ${DATA.grs.map(s => marker('grs',s.x,s.y,{click:'grs',id:s.id,sel:s.id===g.id,label:s.id})).join('')}
+      </svg>
+      <div class="maplabel">GRS booming sites · 12 mapped</div>
+    </div>
+    <div class="listcol">
+      <div style="padding:9px 12px;border-bottom:1px solid var(--slate);display:flex;justify-content:space-between;align-items:baseline;background:var(--panel)">
+        <span style="font:600 11px var(--display)">GRS sites</span><span class="sub">12</span>
+      </div>
+      <div class="scroll" style="flex:1">
+        ${DATA.grs.map(s => `<div class="lrowitem ${s.id===g.id?'on':''}" data-grs="${s.id}" tabindex="0" role="button">
+          <div class="t">${s.id} <span style="font-weight:400;color:var(--slate)">· ${esc(s.name)}</span></div>
+          <div class="d">${esc(s.shore.toLowerCase())} · ${esc(s.tactic)}</div>
+        </div>`).join('')}
+        <div style="padding:10px 12px;font:400 9px var(--mono);color:var(--muted)">· · · 7 more</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pk">SELECTED SITE</div><div class="pn">${g.id} · ${esc(g.name)}</div></div>
+      <div class="scroll" style="flex:1">
+        <div class="field"><div class="k">SHORELINE TYPE</div><div class="v">${esc(g.shoreFull)}</div></div>
+        <div class="field"><div class="k">BOOM CONFIGURATION</div><div class="v">${esc(g.boom)}</div></div>
+        <div class="field"><div class="k">ACCESS</div><div class="v">${esc(g.access)}</div></div>
+        <div style="padding:10px 12px 0"><div class="pk">SITE PACKAGE</div></div>
+        <div class="pdf"><span style="font-size:17px">▤</span><span>PDF preview — ${esc(g.pdf)}</span></div>
+        <div style="padding:0 12px 14px"><button class="btn" style="width:100%">↓ DOWNLOAD PDF</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pageRefuge(){
+  const r = DATA.refuge.find(x => x.id === state.refugeSelected) || DATA.refuge[1];
+  const A = state.answers;
+  let outcome = null;
+  if(A.q1 === 'yes') outcome = 'sar';
+  else if(A.q1 === 'no' && A.q2 === 'no') outcome = 'deny';
+  else if(A.q1 === 'no' && A.q2 === 'yes' && A.q3 === 'no') outcome = 'grant';
+  else if(A.q1 === 'no' && A.q2 === 'yes' && A.q3 === 'yes') outcome = 'cond';
+
+  const q = (key, text, yesLbl, noLbl) => `
+    <div class="q">${text}</div>
+    <div class="branch">
+      <button class="opt ${A[key]==='no'?'on':''}" data-ans="${key}:no">${noLbl}</button>
+      <button class="opt ${A[key]==='yes'?'on':''}" data-ans="${key}:yes">${yesLbl}</button>
+    </div>`;
+
+  return `<div class="body">
+    <div class="mapwrap">
+      ${mapBase()}
+      <svg class="base" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        ${DATA.sensitivePts.map(p=>marker('sens',p.x,p.y,{label:'Sensitive site'})).join('')}
+        ${DATA.refuge.map(x => marker('refuge',x.x,x.y,{click:'refuge',id:x.id,sel:x.id===r.id,label:x.id})).join('')}
+      </svg>
+      <div class="float layers" style="width:186px">
+        <div class="fh">LAYERS</div>
+        <div class="lrow"><span class="sw" style="border:1px dashed var(--tide);background:none;width:9px;height:9px"></span><span>Anchorage / refuge</span><span class="toggle on"><i></i></span></div>
+        <div class="lrow"><span class="sw" style="background:#8B8B8B"></span><span>PreSCAT · rock / cliff</span><span class="toggle on"><i></i></span></div>
+        <div class="lrow"><span class="sw" style="background:#B99A6B"></span><span>PreSCAT · gravel</span><span class="toggle on"><i></i></span></div>
+        <div class="lrow"><span class="sw" style="background:#E3D2A6"></span><span>PreSCAT · sand / flat</span><span class="toggle on"><i></i></span></div>
+        <div class="lrow"><span class="sw" style="background:#9DBE8A"></span><span>PreSCAT · marsh</span><span class="toggle on"><i></i></span></div>
+        <div class="lrow"><span class="sw" style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--coral)"></span><span>Sensitive site</span><span class="toggle on"><i></i></span></div>
+      </div>
+      <div class="tools">
+        <button class="tool live"><span class="pulse"></span>LIVE</button>
+        <button class="tool">MEASURE</button><button class="tool">PRINT</button>
+      </div>
+      <div class="float" style="bottom:12px;right:12px;width:250px">
+        <div class="ph" style="padding:8px 11px;border-bottom:1px solid var(--slate);background:var(--panel)">
+          <div class="pk">SELECTED · ${r.id} ${esc(r.name.toUpperCase())}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr">
+          <div class="cell" style="padding:7px 10px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)"><div class="k" style="font:500 7px var(--mono);color:var(--muted)">HOLDING</div><div style="font:500 9px var(--mono);margin-top:2px">${esc(r.hold)}</div></div>
+          <div class="cell" style="padding:7px 10px;border-bottom:1px solid var(--line-soft)"><div class="k" style="font:500 7px var(--mono);color:var(--muted)">EXPOSURE</div><div style="font:500 9px var(--mono);margin-top:2px">${esc(r.exp)}</div></div>
+          <div class="cell" style="padding:7px 10px;border-right:1px solid var(--line-soft)"><div class="k" style="font:500 7px var(--mono);color:var(--muted)">PRESCAT</div><div style="font:500 9px var(--mono);margin-top:2px">${esc(r.prescat)}</div></div>
+          <div class="cell" style="padding:7px 10px"><div class="k" style="font:500 7px var(--mono);color:var(--coral)">SENSITIVE</div><div style="font:500 9px var(--mono);margin-top:2px;color:var(--coral)">${esc(r.sens)}</div></div>
+        </div>
+      </div>
+      <div class="maplabel">anchorage areas + PreSCAT shoreline segments</div>
+    </div>
+    <div class="panel" style="width:394px">
+      <div class="ph">
+        <div class="pn">Place of Refuge decision</div>
+        <div class="sub" style="margin-top:2px">council-endorsed assessment · ${r.id} shown${r.endorsed?' ✓':''}</div>
+      </div>
+      <div class="scroll" style="flex:1">
+        <div class="tree">
+          ${q('q1','Vessel requests refuge — is there an immediate risk to life?','YES → SAR first, CCG lead','NO ↓')}
+          ${q('q2','Is pollution risk lower at anchor than underway or offshore?','YES ↓','NO → deny, monitor offshore')}
+          ${q('q3','Cultural or environmental sensitivity within influence zone?','YES → conditions + consultation','NO ↓')}
+          <div class="outcomes">
+            <div class="outcome ${outcome==='grant'?'hit':''}"><div class="t">GRANT</div><div class="d">with monitoring</div></div>
+            <div class="outcome ${outcome==='cond'?'hit':''}"><div class="t">GRANT W/ CONDITIONS</div><div class="d">boom staged, tug standby</div></div>
+            <div class="outcome ${(outcome==='deny'||outcome==='sar')?'hit':''}"><div class="t">DENY</div><div class="d">escalate to CCG</div></div>
+          </div>
+          ${outcome ? `<div style="margin-top:10px"><button class="btn" data-resetans="1">Reset decision</button></div>` : ''}
+        </div>
+        <div class="consider">
+          <div class="ck">CONSIDERATIONS — WELCOMING A VESSEL</div>
+          <ul>
+            <li class="sens">Cultural &amp; environmental sensitivity — consult nation reps before granting; sensitive sites shown as generic markers only</li>
+            <li>PreSCAT shoreline class — cleanup difficulty if containment fails</li>
+            <li>Holding ground, depth &amp; swing room for vessel size</li>
+            <li>Weather exposure &amp; forecast window (48 h)</li>
+            <li>Response access — nearest GRS site, boom transit time, launch points</li>
+            <li>Community proximity — air quality, vessel traffic, harvest areas</li>
+            <li>Jurisdiction — Transport Canada / CCG lead, nation consent role</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pagePlans(){
+  return `<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="pagebar"><span class="pagetitle">Plans &amp; exercises</span>
+      <span class="stat"><span class="k">DOCUMENTS</span><span class="v">10</span></span>
+      <span class="stat"><span class="k">NEXT DRILL</span><span class="v">Aug 6</span></span>
+      <button class="chip" style="margin-left:auto">+ ADD DOCUMENT</button>
+    </div>
+    <div class="body"><div class="scroll" style="flex:1">
+      <div style="padding:9px 14px;border-bottom:1px solid var(--slate)"><span style="font:600 11px var(--display)">Documents library</span></div>
+      <table>
+        <thead><tr><th>DOCUMENT</th><th style="width:130px">TYPE</th><th style="width:80px">VERSION</th><th style="width:130px">LAST UPDATED</th><th style="width:70px"></th></tr></thead>
+        <tbody>${DATA.docs.map(d => `<tr>
+          <td style="font-weight:500">${esc(d.n)}</td><td class="sub">${esc(d.t)}</td>
+          <td class="sub">${d.v}</td><td class="sub">${d.u}</td>
+          <td><button class="chip">Open</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="padding:11px 14px;font:400 9px var(--mono);color:var(--muted)">· · · 6 more documents</div>
+
+      <div style="padding:9px 14px;border-top:1px solid var(--slate);border-bottom:1px solid var(--slate);margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font:600 11px var(--display)">Exercises</span><span class="sub">next drill Aug 6</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="border-right:1px solid var(--line-soft);padding:12px 14px">
+          <div class="pk" style="margin-bottom:8px">SCHEDULED</div>
+          ${DATA.exScheduled.map(e => `<div style="border:1px solid var(--line-soft);border-radius:3px;padding:9px;margin-bottom:8px">
+            <div style="font:600 10px var(--mono)">${e.d} — ${esc(e.t)}</div>
+            <div class="sub" style="margin-top:3px">${esc(e.s)}</div></div>`).join('')}
+        </div>
+        <div style="padding:12px 14px">
+          <div class="pk" style="margin-bottom:8px">HISTORY</div>
+          ${DATA.exHistory.map(e => `<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft)">
+            <div class="sub" style="width:96px;flex:none">${e.d}</div>
+            <div><div style="font:500 10px var(--mono)">${esc(e.t)}</div><div class="sub" style="margin-top:2px">${esc(e.s)}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div></div>
+  </div>`;
+}
+
+/* ============================================================
+   RENDER — rebuild the whole shell from state on every change.
+   Crude but predictable, and it mirrors how React works.
+   ============================================================ */
+const ROUTES = {cop:pageCOP, incident:pageIncident, log:pageLog, assets:pageAssets,
+                crew:pageCrew, grs:pageGRS, refuge:pageRefuge, plans:pagePlans};
+
+function render(){
+  const page = (ROUTES[state.page] || pageCOP)();
+  document.getElementById('app').innerHTML =
+    navRail() + `<div class="main">` + header() + page + `</div>`;
+}
+
+/* ---------- events: one listener, data-attribute routing ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-nav],[data-menu],[data-pick],[data-feature],[data-clearfeature],[data-tab],[data-grs],[data-grsjump],[data-refuge],[data-ans],[data-resetans],[data-logfilter],[data-layer]');
+
+  if(!t){
+    if(state.menuOpen){ state.menuOpen = false; render(); }
+    return;
+  }
+  const d = t.dataset;
+
+  if(d.nav){ state.page = d.nav; state.menuOpen = false; render(); return; }
+  if(d.menu){ state.menuOpen = !state.menuOpen; render(); return; }
+
+  if(d.pick){
+    state.activeIncidentId = d.pick === 'none' ? null : d.pick;
+    state.selectedFeature = null;
+    state.menuOpen = false;
+    if(d.pick === 'none' && state.page === 'incident') state.page = 'cop';
+    render(); return;
+  }
+
+  if(d.feature){
+    // Selecting a historic incident also makes it the active context,
+    // so the incident page has something to show.
+    if(state.activeIncidentId !== d.feature){
+      const f = DATA.incidents.find(i => i.id === d.feature);
+      if(f && f.status === 'active') state.activeIncidentId = d.feature;
+    }
+    state.selectedFeature = d.feature; render(); return;
+  }
+  if(d.clearfeature){ state.selectedFeature = null; render(); return; }
+
+  if(d.tab){ state.incidentTab = d.tab; render(); return; }
+  if(d.grs){ state.grsSelected = d.grs; render(); return; }
+  if(d.grsjump){ state.grsSelected = d.grsjump; state.page = 'grs'; render(); return; }
+  if(d.refuge){ state.refugeSelected = d.refuge; render(); return; }
+
+  if(d.ans){
+    const [k,v] = d.ans.split(':');
+    state.answers[k] = state.answers[k] === v ? null : v;
+    render(); return;
+  }
+  if(d.resetans){ state.answers = {q1:null,q2:null,q3:null}; render(); return; }
+  if(d.logfilter){ state.logFilter = d.logfilter; render(); return; }
+  if(d.layer){ state.layers[d.layer] = !state.layers[d.layer]; render(); return; }
+});
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if(state.menuOpen){ state.menuOpen = false; render(); }
+    else if(state.selectedFeature){ state.selectedFeature = null; render(); }
+  }
+  if((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-grs],[data-refuge],[data-feature]')){
+    e.preventDefault(); e.target.click();
+  }
+});
+
+document.getElementById('hintclose').addEventListener('click', () => {
+  document.getElementById('hint').style.display = 'none';
+  document.body.classList.remove('hinted');
+});
+
+render();
+</script>
+</body>
+</html>
